@@ -437,9 +437,9 @@ class PantallaPrincipal(BoxLayout):
         self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
         self.campo_precio_total.establecer_valor(None)
         self.campo_peso.establecer_valor(None)
-
+        
     def _construir_cabecera(self):
-        """Para imagen: TarjetaConFondo(ruta_imagen='assets/logo.png')"""
+        """Cabecera con imagen a la izquierda y título."""
         cabecera = TarjetaConFondo(
             color_fondo=COLOR_FONDO_CABECERA,
             radio_esquinas=dp(12),
@@ -447,18 +447,86 @@ class PantallaPrincipal(BoxLayout):
             size_hint_y=None,
             height=dp(70),
         )
+        
+        # Layout horizontal para imagen + título
+        contenido = BoxLayout(
+            orientation="horizontal",
+            padding=dp(16),
+            spacing=dp(12),
+            size_hint=(1, 1),
+            pos_hint={"x": 0, "y": 0},
+        )
+        
+        # Imagen a la izquierda
+        imagen_container = FloatLayout(
+            size_hint_x=None,
+            width=dp(50),
+            height=dp(50),
+        )
+        
+        try:
+            textura_imagen = CoreImage("data/icon.png").texture
+            # Guardar la textura y el contenedor para usar en el callback
+            imagen_container.textura = textura_imagen
+            
+            def actualizar_imagen(container, *args):
+                container.canvas.before.clear()
+                textura = container.textura
+                ancho_contenedor = container.width
+                alto_contenedor = container.height
+                
+                # Obtener proporción original de la imagen
+                ancho_textura = textura.width
+                alto_textura = textura.height
+                proporcion = alto_textura / ancho_textura
+                
+                # Calcular tamaño manteniendo proporción
+                if ancho_contenedor * proporcion <= alto_contenedor:
+                    # Limitado por ancho
+                    ancho_final = ancho_contenedor
+                    alto_final = ancho_contenedor * proporcion
+                else:
+                    # Limitado por alto
+                    alto_final = alto_contenedor
+                    ancho_final = alto_contenedor / proporcion
+                
+                # Centrar la imagen
+                x = container.x + (ancho_contenedor - ancho_final) / 2
+                y = container.y + (alto_contenedor - alto_final) / 2
+                
+                with container.canvas.before:
+                    Color(1, 1, 1, 1)
+                    Rectangle(
+                        texture=textura,
+                        pos=(x, y),
+                        size=(ancho_final, alto_final),
+                    )
+            
+            # Dibujar inicialmente
+            actualizar_imagen(imagen_container)
+            
+            # Actualizar cuando cambie tamaño o posición
+            imagen_container.bind(pos=actualizar_imagen, size=actualizar_imagen)
+            
+        except:
+            pass
+        
+        contenido.add_widget(imagen_container)
+
+        # Título a la derecha
         titulo = Label(
             text="Calculadora Precio / Peso",
             font_size=TAMANIO_FUENTE_TITULO,
             color=COLOR_ACENTO,
             bold=True,
             size_hint=(1, 1),
-            pos_hint={"x": 0, "y": 0},
-            halign="center",
+            halign="left",
             valign="middle",
         )
         titulo.bind(size=lambda w, s: setattr(w, "text_size", s))
-        cabecera.add_widget(titulo)
+        contenido.add_widget(titulo)
+        
+        cabecera.add_widget(contenido)
         self.add_widget(cabecera)
 
     def _construir_tarjeta_precio_unidad(self):
