@@ -1,0 +1,25 @@
+#mis archivos
+holaMundo.py
+
+# Entorno virtual
+.venv/
+
+# Buildozer
+.buildozer/
+bin/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Configuración de VS Code
+.vscode/
+
+# Archivos temporales
+*.log
+*.tmp
+
+# Linux
+.DS_Store
