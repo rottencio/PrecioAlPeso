@@ -59,7 +59,7 @@ UNIDADES_PESO_LISTA = list(UNIDADES_PESO.keys())
 SIMBOLO_DEFECTO = "€"
 UNIDAD_DEFECTO  = "gramos (g)"
 
-PRECISION_CALCULO = Decimal("0.000001")
+PRECISION_CALCULO = Decimal("0.0000000001")
 PRECISION_MOSTRAR = Decimal("0.01")
 
 
@@ -432,11 +432,11 @@ class PantallaPrincipal(BoxLayout):
         
         # Inicializar valores por defecto
         self._precio_por_unidad = Decimal("1")
-        self._precio_total = Decimal("0")
-        self._peso = Decimal("0")
+        self._precio_total = None
+        self._peso = None
         self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
-        self.campo_precio_total.establecer_valor(self._precio_total)
-        self.campo_peso.establecer_valor(self._peso)
+        self.campo_precio_total.establecer_valor(None)
+        self.campo_peso.establecer_valor(None)
 
     def _construir_cabecera(self):
         """Para imagen: TarjetaConFondo(ruta_imagen='assets/logo.png')"""
