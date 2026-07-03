@@ -48,7 +48,7 @@ UNIDADES_PESO = {
     "gramos (g)":   Decimal("1"),
     "kilogramos (kg)":  Decimal("1000"),
     "toneladas (t)":   Decimal("1000000"),
-    "granos (gr)":  Decimal("0.0648"),
+    "granos (gn)":  Decimal("0.0648"),
     "dracmas (dr)":  Decimal("1.771845195309973"),    
     "onzas (oz)":  Decimal("28.3495"),
     "libras (lb)":  Decimal("453.592"),
@@ -56,9 +56,8 @@ UNIDADES_PESO = {
 }
 UNIDADES_PESO_LISTA = list(UNIDADES_PESO.keys())
 
-SIMBOLOS_MONEDA = ["€", "$", "£", "¥"]
 SIMBOLO_DEFECTO = "€"
-UNIDAD_DEFECTO  = "g"
+UNIDAD_DEFECTO  = "gramos (g)"
 
 PRECISION_CALCULO = Decimal("0.000001")
 PRECISION_MOSTRAR = Decimal("0.01")
@@ -403,7 +402,7 @@ class PantallaPrincipal(BoxLayout):
         self._precio_total      : Decimal | None = None
         self._peso              : Decimal | None = None
         self._unidad_actual     : str            = UNIDAD_DEFECTO
-        self._simbolo_actual    : str            = SIMBOLO_DEFECTO
+        self._simbolo_actual    : str            = "€"
         self._campo_activo      : str | None     = None
 
         self._construir_ui()
@@ -430,6 +429,14 @@ class PantallaPrincipal(BoxLayout):
         self._construir_tarjeta_precio_total()
         self._construir_tarjeta_peso()
         self.add_widget(Widget())  # Espaciador flexible
+        
+        # Inicializar valores por defecto
+        self._precio_por_unidad = Decimal("1")
+        self._precio_total = Decimal("0")
+        self._peso = Decimal("0")
+        self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
+        self.campo_precio_total.establecer_valor(self._precio_total)
+        self.campo_peso.establecer_valor(self._peso)
 
     def _construir_cabecera(self):
         """Para imagen: TarjetaConFondo(ruta_imagen='assets/logo.png')"""
@@ -461,7 +468,7 @@ class PantallaPrincipal(BoxLayout):
             radio_esquinas=dp(16),
             ruta_imagen=None,
             size_hint_y=None,
-            height=dp(230),
+            height=dp(158),
         )
         contenido = BoxLayout(
             orientation="vertical",
@@ -470,28 +477,19 @@ class PantallaPrincipal(BoxLayout):
             size_hint=(1, 1),
             pos_hint={"x": 0, "y": 0},
         )
-
         fila_selectores = BoxLayout(
             orientation="horizontal",
             spacing=dp(12),
             size_hint_y=None,
             height=dp(72),
         )
-        self.selector_moneda = SelectorConEtiqueta(
-            etiqueta="Moneda",
-            opciones=SIMBOLOS_MONEDA,
-            valor_defecto=SIMBOLO_DEFECTO,
-            en_cambio=self._al_cambiar_moneda,
-            size_hint_x=0.35,
-        )
         self.selector_unidad = SelectorConEtiqueta(
             etiqueta="Unidad de peso",
             opciones=UNIDADES_PESO_LISTA,
             valor_defecto=UNIDAD_DEFECTO,
             en_cambio=self._al_cambiar_unidad,
-            size_hint_x=0.65,
+            size_hint_x=1,
         )
-        fila_selectores.add_widget(self.selector_moneda)
         fila_selectores.add_widget(self.selector_unidad)
         contenido.add_widget(fila_selectores)
 
@@ -587,10 +585,6 @@ class PantallaPrincipal(BoxLayout):
 
     # ── Callbacks de selectores ───────────────────────────────────────
 
-    def _al_cambiar_moneda(self, nuevo_simbolo: str):
-        self._simbolo_actual = nuevo_simbolo
-        self._actualizar_etiquetas()
-
     def _al_cambiar_unidad(self, nueva_unidad: str):
         """
         Convierte precio/unidad y peso a la nueva unidad automáticamente.
@@ -616,58 +610,91 @@ class PantallaPrincipal(BoxLayout):
     # ── Callbacks de campos de texto ──────────────────────────────────
 
     def _al_cambiar_precio_unidad(self, texto: str):
+        if self._campo_activo != "precio_unidad":
+            return
         self._precio_por_unidad = parsear_decimal(texto)
-        self._recalcular_desde_precio_unidad()
+        self._recalcular_otros_campos("precio_unidad")
 
     def _al_cambiar_precio_total(self, texto: str):
         if self._campo_activo != "precio_total":
             return
         self._precio_total = parsear_decimal(texto)
-        self._recalcular_peso()
+        self._recalcular_otros_campos("precio_total")
 
     def _al_cambiar_peso(self, texto: str):
         if self._campo_activo != "peso":
             return
         self._peso = parsear_decimal(texto)
-        self._recalcular_precio_total()
+        self._recalcular_otros_campos("peso")
 
     # ── Motor de cálculo ──────────────────────────────────────────────
 
-    def _recalcular_desde_precio_unidad(self):
+    def _recalcular_otros_campos(self, campo_editado: str):
         """
-        Al cambiar precio/unidad:
-        - Si hay precio_total → recalcula peso.
-        - Si hay peso         → recalcula precio_total.
-        - Prioridad: precio_total sobre peso.
+        Recalcula los dos campos que NO están siendo editados.
+        Evita conflictos solo recalculando campos inactivos.
         """
-        if self._precio_por_unidad is None:
-            return
-        if self._precio_total is not None:
-            self._recalcular_peso()
-        elif self._peso is not None:
-            self._recalcular_precio_total()
-
-    def _recalcular_precio_total(self):
-        if self._precio_por_unidad is None or self._peso is None:
-            return
-        self._precio_total = calcular_precio_total(
-            self._precio_por_unidad, self._peso
-        )
-        self.campo_precio_total.establecer_valor(self._precio_total)
+        # Limpiar errores
+        self.campo_precio_unidad.mostrar_error("")
         self.campo_precio_total.mostrar_error("")
-
-    def _recalcular_peso(self):
-        if self._precio_por_unidad is None or self._precio_total is None:
-            return
-        nuevo_peso = calcular_peso(self._precio_por_unidad, self._precio_total)
-        if nuevo_peso is None:
-            self.campo_peso.mostrar_error(
-                "El precio por unidad no puede ser 0"
-            )
-            return
-        self._peso = nuevo_peso
-        self.campo_peso.establecer_valor(self._peso)
         self.campo_peso.mostrar_error("")
+
+        if campo_editado == "precio_unidad":
+            # Si edito precio/unidad, recalculo los otros dos
+            if self._precio_por_unidad is None:
+                return
+            if self._precio_total is not None:
+                # Calcular peso
+                nuevo_peso = calcular_peso(self._precio_por_unidad, self._precio_total)
+                if nuevo_peso is None:
+                    self.campo_peso.mostrar_error("El precio por unidad no puede ser 0")
+                    return
+                self._peso = nuevo_peso
+                self.campo_peso.establecer_valor(self._peso)
+            elif self._peso is not None:
+                # Calcular precio total
+                self._precio_total = calcular_precio_total(self._precio_por_unidad, self._peso)
+                self.campo_precio_total.establecer_valor(self._precio_total)
+
+        elif campo_editado == "precio_total":
+            # Si edito precio total, recalculo los otros dos
+            if self._precio_total is None:
+                return
+            if self._precio_por_unidad is not None and self._peso is not None:
+                # Calcular precio/unidad (prioridad para mantener consistencia)
+                if self._peso == Decimal("0"):
+                    self.campo_peso.mostrar_error("El peso no puede ser 0 para calcular precio/unidad")
+                    return
+                self._precio_por_unidad = (self._precio_total / self._peso).quantize(
+                    PRECISION_CALCULO, rounding=ROUND_HALF_UP
+                )
+                self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
+            elif self._precio_por_unidad is not None:
+                # Calcular peso
+                nuevo_peso = calcular_peso(self._precio_por_unidad, self._precio_total)
+                if nuevo_peso is None:
+                    self.campo_peso.mostrar_error("El precio por unidad no puede ser 0")
+                    return
+                self._peso = nuevo_peso
+                self.campo_peso.establecer_valor(self._peso)
+
+        elif campo_editado == "peso":
+            # Si edito peso, recalculo los otros dos
+            if self._peso is None:
+                return
+            if self._precio_por_unidad is not None and self._precio_total is not None:
+                # Calcular precio/unidad (prioridad para mantener consistencia)
+                if self._peso == Decimal("0"):
+                    self.campo_peso.mostrar_error("El peso no puede ser 0 para calcular precio/unidad")
+                    return
+                self._precio_por_unidad = (self._precio_total / self._peso).quantize(
+                    PRECISION_CALCULO, rounding=ROUND_HALF_UP
+                )
+                self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
+            elif self._precio_por_unidad is not None:
+                # Calcular precio total
+                self._precio_total = calcular_precio_total(self._precio_por_unidad, self._peso)
+                self.campo_precio_total.establecer_valor(self._precio_total)
 
 
 # ─────────────────────────────────────────────
