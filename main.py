@@ -44,12 +44,15 @@ TAMANIO_FUENTE_SPINNER  = dp(14)
 
 # Unidades y factores de conversión a gramos
 UNIDADES_PESO = {
-    "g":   Decimal("1"),
-    "kg":  Decimal("1000"),
-    "mg":  Decimal("0.001"),
-    "oz":  Decimal("28.3495"),
-    "lb":  Decimal("453.592"),
-    "t":   Decimal("1000000"),
+    "miligramos (mg)":  Decimal("0.001"),
+    "gramos (g)":   Decimal("1"),
+    "kilogramos (kg)":  Decimal("1000"),
+    "toneladas (t)":   Decimal("1000000"),
+    "granos (gr)":  Decimal("0.0648"),
+    "dracmas (dr)":  Decimal("1.771845195309973"),    
+    "onzas (oz)":  Decimal("28.3495"),
+    "libras (lb)":  Decimal("453.592"),
+    
 }
 UNIDADES_PESO_LISTA = list(UNIDADES_PESO.keys())
 
