@@ -1,6 +1,6 @@
 # main.py
 # Calculadora de precio/peso con Kivy
-# Versión: 1.0
+# Versión: 0.0
 
 # ─────────────────────────────────────────────
 # IMPORTS
