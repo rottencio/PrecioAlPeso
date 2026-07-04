@@ -404,6 +404,7 @@ class PantallaPrincipal(BoxLayout):
         self._unidad_actual     : str            = UNIDAD_DEFECTO
         self._simbolo_actual    : str            = "€"
         self._campo_activo      : str | None     = None
+        self._historial_edicion : list[str]      = []  # Historial de los dos últimos campos editados
 
         self._construir_ui()
         self._aplicar_fondo_app()
@@ -636,7 +637,7 @@ class PantallaPrincipal(BoxLayout):
         return f"Precio total ({self._simbolo_actual})"
 
     def _etiqueta_peso(self) -> str:
-        return f"Peso ({self._unidad_actual})"
+        return f"Peso en {self._unidad_actual}"
 
     def _actualizar_etiquetas(self):
         self.campo_precio_unidad.lbl_etiqueta.text = self._etiqueta_precio_unidad()
@@ -681,88 +682,83 @@ class PantallaPrincipal(BoxLayout):
         if self._campo_activo != "precio_unidad":
             return
         self._precio_por_unidad = parsear_decimal(texto)
-        self._recalcular_otros_campos("precio_unidad")
+        self._actualizar_historial("precio_unidad")
+        self._recalcular_otros_campos()
 
     def _al_cambiar_precio_total(self, texto: str):
         if self._campo_activo != "precio_total":
             return
         self._precio_total = parsear_decimal(texto)
-        self._recalcular_otros_campos("precio_total")
+        self._actualizar_historial("precio_total")
+        self._recalcular_otros_campos()
 
     def _al_cambiar_peso(self, texto: str):
         if self._campo_activo != "peso":
             return
         self._peso = parsear_decimal(texto)
-        self._recalcular_otros_campos("peso")
+        self._actualizar_historial("peso")
+        self._recalcular_otros_campos()
 
     # ── Motor de cálculo ──────────────────────────────────────────────
 
-    def _recalcular_otros_campos(self, campo_editado: str):
+    def _actualizar_historial(self, campo_editado: str):
         """
-        Recalcula los dos campos que NO están siendo editados.
-        Evita conflictos solo recalculando campos inactivos.
+        Actualiza el historial manteniendo solo los dos últimos campos editados.
+        """
+        if campo_editado in self._historial_edicion:
+            self._historial_edicion.remove(campo_editado)
+        self._historial_edicion.append(campo_editado)
+        # Mantener solo los dos últimos
+        if len(self._historial_edicion) > 2:
+            self._historial_edicion.pop(0)
+
+    def _recalcular_otros_campos(self):
+        """
+        Calcula el campo que NO está en el historial de los dos últimos editados.
+        Si el historial tiene menos de 2 campos, no hace nada.
         """
         # Limpiar errores
         self.campo_precio_unidad.mostrar_error("")
         self.campo_precio_total.mostrar_error("")
         self.campo_peso.mostrar_error("")
 
-        if campo_editado == "precio_unidad":
-            # Si edito precio/unidad, recalculo los otros dos
-            if self._precio_por_unidad is None:
-                return
-            if self._precio_total is not None:
-                # Calcular peso
-                nuevo_peso = calcular_peso(self._precio_por_unidad, self._precio_total)
-                if nuevo_peso is None:
-                    self.campo_peso.mostrar_error("El precio por unidad no puede ser 0")
-                    return
-                self._peso = nuevo_peso
-                self.campo_peso.establecer_valor(self._peso)
-            elif self._peso is not None:
-                # Calcular precio total
-                self._precio_total = calcular_precio_total(self._precio_por_unidad, self._peso)
-                self.campo_precio_total.establecer_valor(self._precio_total)
+        if len(self._historial_edicion) < 2:
+            return
 
-        elif campo_editado == "precio_total":
-            # Si edito precio total, recalculo los otros dos
-            if self._precio_total is None:
-                return
+        # Determinar cuál campo NO está en el historial
+        campos = {"precio_unidad", "precio_total", "peso"}
+        campos_en_historial = set(self._historial_edicion)
+        campo_a_calcular = (campos - campos_en_historial).pop()
+
+        # Calcular el campo que no está en el historial
+        if campo_a_calcular == "precio_total":
+            # Calcular precio total: precio_unidad * peso
             if self._precio_por_unidad is not None and self._peso is not None:
-                # Calcular precio/unidad (prioridad para mantener consistencia)
-                if self._peso == Decimal("0"):
-                    self.campo_peso.mostrar_error("El peso no puede ser 0 para calcular precio/unidad")
-                    return
-                self._precio_por_unidad = (self._precio_total / self._peso).quantize(
-                    PRECISION_CALCULO, rounding=ROUND_HALF_UP
-                )
-                self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
-            elif self._precio_por_unidad is not None:
-                # Calcular peso
-                nuevo_peso = calcular_peso(self._precio_por_unidad, self._precio_total)
-                if nuevo_peso is None:
-                    self.campo_peso.mostrar_error("El precio por unidad no puede ser 0")
-                    return
-                self._peso = nuevo_peso
-                self.campo_peso.establecer_valor(self._peso)
-
-        elif campo_editado == "peso":
-            # Si edito peso, recalculo los otros dos
-            if self._peso is None:
-                return
-            if self._precio_por_unidad is not None and self._precio_total is not None:
-                # Calcular precio/unidad (prioridad para mantener consistencia)
-                if self._peso == Decimal("0"):
-                    self.campo_peso.mostrar_error("El peso no puede ser 0 para calcular precio/unidad")
-                    return
-                self._precio_por_unidad = (self._precio_total / self._peso).quantize(
-                    PRECISION_CALCULO, rounding=ROUND_HALF_UP
-                )
-                self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
-            elif self._precio_por_unidad is not None:
-                # Calcular precio total
                 self._precio_total = calcular_precio_total(self._precio_por_unidad, self._peso)
                 self.campo_precio_total.establecer_valor(self._precio_total)
+
+        elif campo_a_calcular == "peso":
+            # Calcular peso: precio_total / precio_unidad
+            if self._precio_total is not None and self._precio_por_unidad is not None:
+                if self._precio_por_unidad == Decimal("0"):
+                    self.campo_peso.mostrar_error("El precio por unidad no puede ser 0")
+                    return
+                self._peso = calcular_peso(self._precio_por_unidad, self._precio_total)
+                if self._peso is None:
+                    self.campo_peso.mostrar_error("El precio por unidad no puede ser 0")
+                    return
+                self.campo_peso.establecer_valor(self._peso)
+
+        elif campo_a_calcular == "precio_unidad":
+            # Calcular precio/unidad: precio_total / peso
+            if self._precio_total is not None and self._peso is not None:
+                if self._peso == Decimal("0"):
+                    self.campo_peso.mostrar_error("El peso no puede ser 0 para calcular precio/unidad")
+                    return
+                self._precio_por_unidad = (self._precio_total / self._peso).quantize(
+                    PRECISION_CALCULO, rounding=ROUND_HALF_UP
+                )
+                self.campo_precio_unidad.establecer_valor(self._precio_por_unidad)
 
 
 # ─────────────────────────────────────────────
