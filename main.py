@@ -56,6 +56,30 @@ UNIDADES_PESO = {
 }
 UNIDADES_PESO_LISTA = list(UNIDADES_PESO.keys())
 
+# Formas singulares de las unidades para etiquetas
+UNIDADES_PESO_SINGULAR = {
+    "miligramos (mg)": "miligramo (mg)",
+    "gramos (g)": "gramo (g)",
+    "kilogramos (kg)": "kilogramo (kg)",
+    "toneladas (t)": "tonelada (t)",
+    "granos (gn)": "grano (gn)",
+    "dracmas (dr)": "dracma (dr)",
+    "onzas (oz)": "onza (oz)",
+    "libras (lb)": "libra (lb)",
+}
+
+# Género gramatical de las unidades (True = masculino, False = femenino)
+UNIDADES_PESO_GENERO = {
+    "miligramos (mg)": True,
+    "gramos (g)": True,
+    "kilogramos (kg)": True,
+    "toneladas (t)": False,
+    "granos (gn)": True,
+    "dracmas (dr)": True,
+    "onzas (oz)": False,
+    "libras (lb)": False,
+}
+
 SIMBOLO_DEFECTO = "€"
 UNIDAD_DEFECTO  = "gramos (g)"
 
@@ -66,6 +90,19 @@ PRECISION_MOSTRAR = Decimal("0.01")
 # ─────────────────────────────────────────────
 # UTILIDADES PURAS
 # ─────────────────────────────────────────────
+
+def obtener_unidad_forma(unidad: str, plural: bool = True) -> str:
+    """Devuelve la unidad en singular o plural según el contexto."""
+    if plural:
+        return unidad
+    return UNIDADES_PESO_SINGULAR.get(unidad, unidad)
+
+
+def obtener_articulo(unidad: str) -> str:
+    """Devuelve el artículo correcto (el/la) según el género de la unidad."""
+    es_masculino = UNIDADES_PESO_GENERO.get(unidad, True)
+    return "el" if es_masculino else "la"
+
 
 def normalizar_entrada(texto: str) -> str:
     """Reemplaza coma por punto para parsear el número."""
@@ -631,7 +668,9 @@ class PantallaPrincipal(BoxLayout):
     # ── Etiquetas dinámicas ───────────────────────────────────────────
 
     def _etiqueta_precio_unidad(self) -> str:
-        return f"Precio por {self._unidad_actual} ({self._simbolo_actual})"
+        unidad_singular = obtener_unidad_forma(self._unidad_actual, plural=False)
+        articulo = obtener_articulo(self._unidad_actual)
+        return f"A cuánto está {articulo} {unidad_singular} ({self._simbolo_actual})"
 
     def _etiqueta_precio_total(self) -> str:
         return f"Precio total ({self._simbolo_actual})"
