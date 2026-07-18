@@ -1,5 +1,6 @@
 #mis archivos
 holaMundo.py
+TODO
 
 # Entorno virtual
 .venv/
@@ -23,3 +24,6 @@ __pycache__/
 
 # Linux
 .DS_Store
+
+# Archivos residuales
+*:Zone.Identifier
