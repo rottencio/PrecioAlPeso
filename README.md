@@ -4,13 +4,13 @@
 
 ![Logo](assets/icon.png)
 
-**Compara precios de productos según su peso de forma rápida y sencilla.** <br>
-**Compare product prices by weight quickly and easily.**  
-
 [![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
 [![Kivy](https://img.shields.io/badge/Kivy-Framework-success.svg)](https://kivy.org/)
 [![Android](https://img.shields.io/badge/Android-Supported-brightgreen.svg)](https://www.android.com/)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPLv3%2B-blue.svg)](LICENSE)
+
+**Compara precios de productos según su peso de forma rápida y sencilla.** <br>
+**Compare product prices by weight quickly and easily.**  
 
 # 🌐 **Elige tu idioma / Choose your language**
 

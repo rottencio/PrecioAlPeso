@@ -4,14 +4,14 @@
 
 ![Logo](assets/icon.png)
 
-[🇪🇸 Español](README.es.md) | **🇬🇧 English**
-
-**An Android app that helps you compare products by calculating their equivalent price based on their weight.**
-
 [![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
 [![Kivy](https://img.shields.io/badge/Kivy-Framework-success.svg)](https://kivy.org/)
 [![Android](https://img.shields.io/badge/Android-Supported-brightgreen.svg)](https://www.android.com/)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPLv3%2B-blue.svg)](LICENSE)
+
+[🇪🇸 Español](README.es.md) | **🇬🇧 English**
+
+**An Android app that helps you compare products by calculating their equivalent price based on their weight.**
 
 </div>
 
